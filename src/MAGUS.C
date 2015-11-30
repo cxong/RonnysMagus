@@ -19,8 +19,6 @@ Datum   Žndring
 #include <conio.h>
 #include <dos.h>
 
-#include <graph.h>
-
 #include "grafx.h"
 #include "pics.h"
 #include "digisnd.h"
@@ -173,14 +171,14 @@ void Message( char *s )
 {
   static char *x = NULL;
 
-  if (!x)
+  /*if (!x)
     x = malloc( _imagesize( 10, 415, 399, 475));
 
   if (x)
   {
     _getimage( 10, 415, 399, 475, x);
     _putimage( 10, 405, x, _GPSET);
-  }
+  }*/
   SetColor( GRAY);
   FillRect( 10, 465, 399, 475);
   ShowText( 10, 465, s, BLACK, -1);
@@ -1611,7 +1609,7 @@ void TextEdit( int x, int y, int len, long key, char *s )
     strncpy( buff, s, strlen(s));
     ShowText( x, y, buff, BLACK, GRAY);
   }
-  else if (letter >= 32 && strlen( s) < len)
+  else if (letter >= 32 && (int)strlen( s) < len)
   {
     t = s + strlen( s);
     *t = letter;
@@ -4561,7 +4559,7 @@ void UpdateScreen( Person *pc, int moved )
   OverviewPanel( FALSE);
   if (gFollowDarkMoves)
     Inventory( pc);
-  delay( 100);
+  //delay( 100);
 }
 
 Person *PickAPlayer( void )
@@ -5239,30 +5237,27 @@ void InterAct( Person *pc, Person *p )
 ---------------------------------------
 */
 
-void SaveItems( int f, struct item *i )
+void SaveItems(FILE *f, struct item *i)
 {
   while (i)
   {
-    write( f, i, sizeof( struct item));
+    fwrite(i, sizeof *i, 1, f);
     i = i->next;
   }
 }
 
 void SaveGame( void )
 {
-  int f;
   Person *p;
   struct thing *t;
 
-  f = open( "SAVED.DAT",
-            O_WRONLY | O_CREAT | O_TRUNC | O_BINARY,
-            S_IRUSR | S_IWUSR);
-  if (f >= 0)
+  FILE *f = fopen("SAVED.DAT", "wb");
+  if (f != NULL)
   {
     p = gCharacters;
     while (p)
     {
-      write( f, p, sizeof( Person));
+      fwrite(p, sizeof *p, 1, f);
       SaveItems( f, p->wielding);
       SaveItems( f, p->wearing);
       SaveItems( f, p->carrying);
@@ -5271,12 +5266,12 @@ void SaveGame( void )
     t = gThings;
     while (t)
     {
-      write( f, &(t->x), sizeof( short));
-      write( f, &(t->y), sizeof( short));
+      fwrite(&t->x, sizeof(short), 1, f);
+      fwrite(&t->y, sizeof(short), 1, f);
       SaveItems( f, t->items);
       t = t->next;
     }
-    close( f);
+    fclose( f);
   }
 }
 
@@ -5730,17 +5725,13 @@ void HallInit( void )
 
 void HallSave( void )
 {
-  int f;
-
   if (!uHallHasChanged) return;
 
-  f = open( "FAMOUS.MGS",
-            O_WRONLY | O_CREAT | O_TRUNC | O_BINARY,
-            S_IRUSR | S_IWUSR);
-  if (f >= 0)
+  FILE *f = fopen("FAMOUS.MGS", "wb");
+  if (f != NULL)
   {
-    write( f, gHallOfFame, sizeof( gHallOfFame));
-    close( f);
+    fwrite(gHallOfFame, sizeof gHallOfFame, 1, f);
+    fclose(f);
   }
   uHallHasChanged = FALSE;
 }

@@ -4,13 +4,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <dos.h>
-#include <linea.h>
-#include <aes.h>
 
 #define XMAX 200
 #define YMAX 320
 
-short far gWorld[XMAX][YMAX];
+short gWorld[XMAX][YMAX];
 short gateX, gateY;
 
 short terrain[23] =

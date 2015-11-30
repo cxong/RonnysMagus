@@ -27,11 +27,7 @@ void ShutDownSound( void );
 int  PlaySong( char *name );
 void PlaySound( int sound, int panning, int volume );
 void SetFXVolume( int volume );
-int  FXVolume( void );
-void SetMusicVolume( int volume );
-int  MusicVolume( void );
+void SetMusicVolume( int volume );;
 void SetFXChannels( int channels );
-int  FXChannels( void );
 void SetMinMusicChannels( int channels );
-int  MinMusicChannels( void );
 

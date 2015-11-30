@@ -1,7 +1,7 @@
 #include <fcntl.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <graph.h>
 #include <io.h>
 #include "grafx.h"
 #include "pics.h"
@@ -57,36 +57,36 @@ void RearrangePic( word *pic, int size )
 
 void ReadPics( const char *name, word **pics, int maxPics, word *p )
 {
-  int f, index;
-  word size;
-  size_t bytesRead;
+	FILE *f = fopen(name, "rb");
+	if (f != NULL)
+	{
+		if (p)
+			if (fread(p, 32, 1, f) != 1) goto bail;
+		else
+			fseek(f, 32, SEEK_SET);
+		int index = 0;
+		size_t bytesRead;
+		do
+		{
+			word size;
+			bytesRead = fread(&size, sizeof size, 1, f);
+			if (bytesRead != 0 && size != 0)
+			{
+				pics[index] = malloc(size + 2);
+				if (fread(pics[index], 4, 1, f) != 1) goto bail;
+				if (fread(pics[index] + 3, size - 4, 1, f) != 1) goto bail;
+				pics[index][0]++;
+				pics[index][1]++;
+			}
+			else
+				pics[index] = NULL;
+			index++;
+		}
+		while (index < maxPics && bytesRead != 0);
 
-  f = open( name, O_RDONLY | O_BINARY, 0);
-  if (f >= 0)
-  {
-    if (p)
-      read( f, p, 32);
-    else
-      lseek( f, 32, SEEK_SET);
-    index = 0;
-    do
-    {
-      bytesRead = read( f, &size, sizeof( size));
-      if (bytesRead != 0 && size != 0)
-      {
-        pics[ index] = malloc( size + 2);
-        read( f, pics[ index], 4);
-        read( f, pics[ index] + 3, size-4);
-        pics[ index][0]++;
-        pics[ index][1]++;
-      }
-      else
-        pics[ index] = NULL;
-      index++;
-    }
-    while (index < maxPics && bytesRead != 0);
-    close( f);
-  }
+	bail:
+		fclose(f);
+	}
 }
 
 void ErasePics( word **pics, int maxPics )
@@ -103,7 +103,7 @@ void ErasePics( word **pics, int maxPics )
   }
 }
 
-void PutPic( int x, int y, void *addr, long mode )
+void PutPic(int x, int y, word *addr, long mode)
 {
-  _putimage( x, y, addr, _GPSET);
+  /*_putimage( x, y, addr, _GPSET);*/
 }
