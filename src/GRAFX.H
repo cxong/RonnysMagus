@@ -3,9 +3,6 @@
 
 #define SGN(x)	((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
 
-#define KEYPRESSED kbhit()
-#define KEYREAD ReadKey()
-
 #define FORCE   0
 #define NOFORCE 1
 
@@ -32,7 +29,6 @@ void ShowMouse( int force );
 int  MouseButtons( void );
 void SetMouseShape( word *shape );
 void SetMouseArrow( void );
-void Mouse( short *x, short *y, short *button );
 void Pause( int ticks );
 
 void ClrScr( void );
@@ -61,7 +57,5 @@ void SetPalette( word *p );
 void FadeOut( void );
 void FadeIn( word *p );
 
-void appl_init( void );
-void appl_exit( void );
 int  Kbshift( int x );
 int  ReadKey( void );

@@ -13,23 +13,12 @@
 #include "grafx.h"
 
 
-void InitMouse( void )
-{
-}
-
 void ShowMouse( int force )
 {
 }
 
 void HideMouse( void )
 {
-}
-
-void Mouse( short *x, short *y, short *button )
-{
-  /**x = out.w.cx;
-  *y = out.w.dx;
-  *button = out.w.bx;*/
 }
 
 int MouseButtons( void )
@@ -210,16 +199,6 @@ void FadeOut( void )
 void FadeIn( word *p )
 {
   SetPalette( p);
-}
-
-void appl_init( void )
-{
-  /*_setvideomode( _VRES16COLOR);*/
-  InitMouse();
-}
-
-void appl_exit( void )
-{
 }
 
 int Kbshift( int x )

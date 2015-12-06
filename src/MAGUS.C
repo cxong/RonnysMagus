@@ -19,7 +19,10 @@ Datum   Žndring
 #include <conio.h>
 #include <dos.h>
 
+#include "defs.h"
+#include "gfx.h"
 #include "grafx.h"
+#include "events.h"
 #include "pics.h"
 #include "digisnd.h"
 
@@ -1243,8 +1246,6 @@ int IsWounded( Person *p )
 #define BOARDCENTER		  9
 #define BOARDLEFT		160
 #define BOARDTOP		  0
-#define ICONWIDTH		 24
-#define ICONHEIGHT		 21
 
 typedef short Board[ BOARDSIZE][ BOARDSIZE];
 Board gBuffer, gPreviousBuffer;
@@ -1431,6 +1432,7 @@ void DisposeButtons( ButtonPtr *bHead )
   }
 }
 
+// TODO: not sure what key corresponds to
 void AddButton( ButtonPtr *bHead,
 		int left, int top, int right, int bottom,
 		long key,
@@ -1543,10 +1545,15 @@ int UserDialog( ButtonPtr bHead )
   do
   {
     key = 0;
+	buttons = 0;
     do
     {
-      Mouse( &mx, &my, &buttons);
-      if (KEYPRESSED) key = KEYREAD;
+		EventPoll(&gEventHandlers, SDL_GetTicks());
+		key = KeyGetPressed(&gEventHandlers.keyboard);
+		mx = gEventHandlers.mouse.currentPos.x;
+		my = gEventHandlers.mouse.currentPos.y;
+		if (gEventHandlers.mouse.currentButtons[0]) buttons = 0x2;
+		else if (gEventHandlers.mouse.currentButtons[1]) buttons = 0x3;
     }
     while (key == 0 && buttons == 0);
 
@@ -1948,10 +1955,15 @@ void SelectCharacters( void )
   while (TRUE) /* Vi return:ar inifr†n loopen... */
   {
     key = 0;
+	mk = 0;
     do
     {
-      if (KEYPRESSED) key = KEYREAD;
-      Mouse( &mx, &my, &mk);
+		EventPoll(&gEventHandlers, SDL_GetTicks());
+		key = KeyGetPressed(&gEventHandlers.keyboard);
+		mx = gEventHandlers.mouse.currentPos.x;
+		my = gEventHandlers.mouse.currentPos.y;
+		if (gEventHandlers.mouse.currentButtons[0]) mk = 0x2;
+		else if (gEventHandlers.mouse.currentButtons[1]) mk = 0x3;
     }
     while (key == 0 && mk == 0);
 
@@ -2203,9 +2215,14 @@ struct item *GetFromInventory( Person *p, int *state )
   {
     while (MOUSEK);
     showmouse( FORCE);
+	button = 0;
     do
     {
-      Mouse( &x, &y, &button);
+		EventPoll(&gEventHandlers, SDL_GetTicks());
+		x = gEventHandlers.mouse.currentPos.x;
+		y = gEventHandlers.mouse.currentPos.y;
+		if (gEventHandlers.mouse.currentButtons[0]) button = 0x2;
+		else if (gEventHandlers.mouse.currentButtons[1]) button = 0x3;
     }
     while (!button);
     hidemouse();
@@ -3063,7 +3080,11 @@ void Teleport( Person *p, int x, int y )
       showmouse( FORCE);
       do
       {
-        Mouse( &nx, &ny, &mk);
+		  EventPoll(&gEventHandlers, SDL_GetTicks());
+		  nx = gEventHandlers.mouse.currentPos.x;
+		  ny = gEventHandlers.mouse.currentPos.y;
+		  if (gEventHandlers.mouse.currentButtons[0]) mk = 0x2;
+		  else if (gEventHandlers.mouse.currentButtons[1]) mk = 0x3;
         nx = MX_TO_BX( nx);
         ny = MY_TO_BY( ny);
       }
@@ -3769,10 +3790,15 @@ void Wishing( Person *p )
   while (!done)
   {
     key = 0;
+	mk = 0;
     do
     {
-      if (KEYPRESSED) key = KEYREAD;
-      Mouse( &mx, &my, &mk);
+		EventPoll(&gEventHandlers, SDL_GetTicks());
+		key = KeyGetPressed(&gEventHandlers.keyboard);
+		mx = gEventHandlers.mouse.currentPos.x;
+		my = gEventHandlers.mouse.currentPos.y;
+		if (gEventHandlers.mouse.currentButtons[0]) mk = 0x2;
+		else if (gEventHandlers.mouse.currentButtons[1]) mk = 0x3;
     }
     while (key == 0 && mk == 0);
 
@@ -5288,32 +5314,31 @@ void CleanUpTheWorld( void )
 }
 
 
-void LoadItems( int f, struct item **i )
+void LoadItems(FILE *f, struct item **i)
 {
   while (*i)
   {
     *i = malloc( sizeof( struct item));
-    read( f, *i, sizeof( struct item));
+	if (fread(*i, sizeof **i, 1, f) != 1) break;
     i = &((*i)->next);
   }
 }
 
 int RestoreGame( void )
 {
-  int f;
   Person *p, *nextPerson;
   struct item *i, *nextItem;
   short x, y;
   size_t bytesRead;
 
-  f = open( "SAVED.DAT", O_RDONLY | O_BINARY);
-  if (f >= 0)
+  FILE *f = fopen("SAVED.DAT", "rb");
+  if (f != NULL)
   {
     CleanUpTheWorld();
     do
     {
       p = malloc( sizeof( Person));
-      read( f, p, sizeof( Person));
+	  if (fread(p, sizeof *p, 1, f) != 1) goto bail;
       LoadItems( f, &(p->wielding));
       LoadItems( f, &(p->wearing));
       LoadItems( f, &(p->carrying));
@@ -5329,14 +5354,14 @@ int RestoreGame( void )
     while (nextPerson);
     do
     {
-      bytesRead = read( f, &x, sizeof( short));
+	  bytesRead = fread(&x, sizeof x, 1, f);
       if (bytesRead > 0)
       {
-        read( f, &y, sizeof( short));
+		  if (fread(&y, sizeof y, 1, f) != 1) goto bail;
         do
         {
           i = malloc( sizeof( struct item));
-          read( f, i, sizeof( struct item));
+		  if (fread(i, sizeof *i, 1, f) != 1) goto bail;
           nextItem = i->next;
           i->next = NULL;
           PlaceItem( i, x, y);
@@ -5345,7 +5370,8 @@ int RestoreGame( void )
       }
     }
     while (bytesRead > 0);
-    close( f);
+	bail:
+		fclose(f);
     unlink( "SAVED.DAT");
     return TRUE;
   }
@@ -5416,10 +5442,15 @@ void Events( void )
   {
     showmouse( FORCE);
     key = 0;
+	mk = 0;
     do
     {
-      if (KEYPRESSED) key = KEYREAD;
-      Mouse( &mx, &my, &mk);
+		EventPoll(&gEventHandlers, SDL_GetTicks());
+		key = KeyGetPressed(&gEventHandlers.keyboard);
+		mx = gEventHandlers.mouse.currentPos.x;
+		my = gEventHandlers.mouse.currentPos.y;
+		if (gEventHandlers.mouse.currentButtons[0]) mk = 0x2;
+		else if (gEventHandlers.mouse.currentButtons[1]) mk = 0x3;
     }
     while (key == 0 && mk == 0);
 
@@ -5632,26 +5663,25 @@ void ShortSwap( short *i )
 
 void ReadWorld( void )
 {
-  int f, x, y;
-  WorldColumn tmp;
-
-  f = open( "WORLD.MGS", O_RDONLY | O_BINARY);
-  if (f >= 0)
-  {
-    for (x = 0; x < WORLD_X_MAX; x++)
-    {
-      read( f, tmp, sizeof( WorldColumn));
-      for (y = 0; y < WORLD_Y_MAX; y++)
-      {
-        ShortSwap( &(tmp[ y]));
-        gWorld[ x][ y] = tmp[ y];
-      }
-    }
-    read( f, &gGateX, sizeof( gGateX));
-    ShortSwap( &gGateX);
-    read( f, &gGateY, sizeof( gGateY));
-    ShortSwap( &gGateY);
-    close( f);
+	FILE *f = fopen("WORLD.MGS", "rb");
+	if (f != NULL)
+	{
+		for (int x = 0; x < WORLD_X_MAX; x++)
+		{
+			WorldColumn tmp;
+			if (fread(tmp, sizeof tmp, 1, f) != 1) goto bail;
+			for (int y = 0; y < WORLD_Y_MAX; y++)
+			{
+				ShortSwap(&(tmp[ y]));
+				gWorld[x][y] = tmp[y];
+			}
+		}
+		if (fread(&gGateX, sizeof gGateX, 1, f) != 1) goto bail;
+		ShortSwap(&gGateX);
+		if (fread(&gGateY, sizeof gGateY, 1, f) != 1) goto bail;
+		ShortSwap(&gGateY);
+	bail:
+		fclose(f);
   }
 }
 
@@ -5711,14 +5741,12 @@ int uHallHasChanged;
 
 void HallInit( void )
 {
-  int f;
-
   memset( gHallOfFame, 0, sizeof( gHallOfFame));
-  f = open( "FAMOUS.MGS", O_RDONLY | O_BINARY);
-  if (f >= 0)
+  FILE *f = fopen( "FAMOUS.MGS", "rb");
+  if (f != NULL)
   {
-    read( f, gHallOfFame, sizeof( gHallOfFame));
-    close( f);
+	  fread(gHallOfFame, sizeof gHallOfFame, 1, f);
+	fclose(f);
   }
   uHallHasChanged = FALSE;
 }
@@ -5846,9 +5874,10 @@ void CleanUp( void )
 ---------------------------------------
 */
 
-void main( int argc, char *argv[] )
+int main( int argc, char *argv[] )
 {
-  appl_init();
+	GFXInit(&gGFX);
+	EventInit(&gEventHandlers, false);
 
   if (argc <= 1)
   {
@@ -5898,5 +5927,7 @@ void main( int argc, char *argv[] )
   printf( "OK\n");
   printf( "going to text mode...\n");
 
-  appl_exit();
+	EventTerminate(&gEventHandlers);
+	GFXQuit(&gGFX);
+	return 0;
 }
