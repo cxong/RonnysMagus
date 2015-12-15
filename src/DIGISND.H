@@ -24,7 +24,6 @@
 
 int  InitializeSound( void );
 void ShutDownSound( void );
-int  PlaySong( char *name );
 void PlaySound( int sound, int panning, int volume );
 void SetFXVolume( int volume );
 void SetMusicVolume( int volume );;

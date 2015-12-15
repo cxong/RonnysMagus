@@ -25,12 +25,14 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <stdbool.h>
+
 #include <SDL.h>
 
 typedef struct
 {
 	SDL_Surface *icon;
-	SDL_Texture *screen;
+	SDL_Surface *screen;
 	SDL_Renderer *renderer;
 	SDL_Window *window;
 	Uint8 *buf;
@@ -38,5 +40,11 @@ typedef struct
 
 extern GFX gGFX;
 
-void GFXInit(GFX *g);
+void GFXInit(GFX *g, const uint8_t *pal);
 void GFXQuit(GFX *g);
+
+void GFXClear(GFX *g);
+void GFXRect(
+	GFX *g, const int x1, const int y1, const int x2, const int y2,
+	const int color, const bool fill);
+void GFXFlip(GFX *g);

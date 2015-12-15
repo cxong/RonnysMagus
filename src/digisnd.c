@@ -35,11 +35,6 @@ void ShutDownSound(void)
 
 }
 
-int PlaySong(char *name)
-{
-	return 0;
-}
-
 void PlaySound(int sound, int panning, int volume)
 {
 

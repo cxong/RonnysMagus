@@ -91,9 +91,6 @@ unsigned short myMouse[37] =
 #define DARKGRAY   11
 
 
-Palette gPalette, gOldPalette;
-
-
 /*
 ---------------------------------------
 	Diverse sm†tt & gott...
@@ -106,8 +103,7 @@ void ReliefTextXY( int x, int y, char *s, int light, int dark, int normal, int b
 {
   if (bg >= 0)
   {
-    SetColor( bg);
-    FillRect( x, y, x + strlen( s)*8, y + 10);
+	  GFXRect(&gGFX, x, y, x + strlen(s) * 8, y + 10, bg, true);
   }
   SetTextMode( TEXT_TRANSPARENT);
   SetColor( dark);
@@ -123,8 +119,7 @@ void ShowText( int x, int y, char *s, int color, int bg )
 {
   if (bg >= 0)
   {
-    SetColor( bg);
-    FillRect( x, y, x + strlen( s)*8, y + 10);
+	  GFXRect(&gGFX, x, y, x + strlen(s) * 8, y + 10, bg, true);
   }
   SetColor( color);
   OutTextXY( x, y+1, s);
@@ -132,12 +127,10 @@ void ShowText( int x, int y, char *s, int color, int bg )
 
 void DrawStoneBox( int x, int y, int w, int h )
 {
-  SetColor( GRAY);
-  FillRect( x, y, x+w, y+h);
-  SetColor( LIGHTGRAY);
-  Rectangle( x, y, x+w, y+h);
-  Rectangle( x+1, y+1, x+w-1, y+h-1);
-  Rectangle( x+2, y+2, x+w-2, y+h-2);
+	GFXRect(&gGFX, x, y, x + w, y + h, GRAY, true);
+	GFXRect(&gGFX, x, y, x + w, y + h, LIGHTGRAY, false);
+	GFXRect(&gGFX, x + 1, y + 1, x + w - 1, y + h - 1, LIGHTGRAY, false);
+	GFXRect(&gGFX, x + 2, y + 2, x + w - 2, y + h - 2, LIGHTGRAY, false);
   SetColor( DARKGRAY);
   Line( x+w, y, x+w, y+h);
   Line( x+w, y+h, x+1, y+h);
@@ -166,8 +159,7 @@ void DrawPlayArea( void )
 {
   DrawStoneBox( 0, 0, 159, 410);
   DrawStoneBox( 0, 400, 620, 79);
-  SetColor( GRAY);
-  FillRect( 5, 400, 155, 410);
+  GFXRect(&gGFX, 5, 400, 155, 410, GRAY, true);
 }
 
 void Message( char *s )
@@ -182,8 +174,7 @@ void Message( char *s )
     _getimage( 10, 415, 399, 475, x);
     _putimage( 10, 405, x, _GPSET);
   }*/
-  SetColor( GRAY);
-  FillRect( 10, 465, 399, 475);
+  GFXRect(&gGFX, 10, 465, 399, 475, GRAY, true);
   ShowText( 10, 465, s, BLACK, -1);
 }
 
@@ -1474,13 +1465,10 @@ void DrawButton( ButtonPtr b, int active )
     SetColor( DARKGRAY);
     Line( b->left-1, b->bottom+1, b->left-1, b->top-1);
     Line( b->left-1, b->top-1, b->right+1, b->top-1);
-    SetColor( BLACK);
-    Rectangle( b->left, b->top, b->right, b->bottom);
-    SetColor( BUTTON_NORMAL);
-    FillRect( b->left+1, b->top+1, b->right-1, b->bottom-1);
-    SetColor( BUTTON_LIGHT);
-    Rectangle( b->left+1, b->top+1, b->right-1, b->bottom-1);
-    Rectangle( b->left+2, b->top+2, b->right-2, b->bottom-2);
+	GFXRect(&gGFX, b->left, b->top, b->right, b->bottom, BLACK, false);
+	GFXRect(&gGFX, b->left + 1, b->top + 1, b->right - 1, b->bottom - 1, BUTTON_NORMAL, true);
+	GFXRect(&gGFX, b->left + 1, b->top + 1, b->right - 1, b->bottom - 1, BUTTON_LIGHT, false);
+	GFXRect(&gGFX, b->left + 2, b->top + 2, b->right - 2, b->bottom - 2, BUTTON_LIGHT, false);
     SetColor( BUTTON_DARK);
     Line( b->right-1, b->top+1, b->right-1, b->bottom-1);
     Line( b->right-1, b->bottom-1, b->left+2, b->bottom-1);
@@ -1571,12 +1559,12 @@ void FrameButton( ButtonPtr b, int index, int down )
   if (!b) return;
 
   hidemouse();
-  if (down)
-    SetColor( BUTTON_DARK);
-  else
-    SetColor( BUTTON_LIGHT);
-  Rectangle( b->left+1, b->top+1, b->right-1, b->bottom-1);
-  Rectangle( b->left+2, b->top+2, b->right-2, b->bottom-2);
+  GFXRect(
+	  &gGFX, b->left + 1, b->top + 1, b->right - 1, b->bottom - 1,
+	  down ? BUTTON_DARK : BUTTON_LIGHT, false);
+  GFXRect(
+	  &gGFX, b->left + 2, b->top + 2, b->right - 2, b->bottom - 2,
+	  down ? BUTTON_DARK : BUTTON_LIGHT, false);
   SetColor( BUTTON_DARK);
   Line( b->right-1, b->top+1, b->right-1, b->bottom-1);
   Line( b->right-1, b->bottom-1, b->left+2, b->bottom-1);
@@ -1636,8 +1624,7 @@ int Question( char *s )
   ButtonPtr b;
 
   hidemouse();
-  FadeOut();
-  ClrScr();
+  GFXClear(&gGFX);
   gMustDraw = TRUE;
 
   b = NULL;
@@ -1649,7 +1636,6 @@ int Question( char *s )
   SetColor( BLACK);
   SetBgColor( GRAY);
   ShowText( 300 - strlen( s)*4, 140, s, BLACK, -1);
-  FadeIn( gPalette);
   showmouse( NOFORCE);
 
   item = UserDialog( b);
@@ -1670,8 +1656,7 @@ void Confirm( char *s, char *buttonText )
   ButtonPtr b;
 
   hidemouse();
-  FadeOut();
-  ClrScr();
+  GFXClear(&gGFX);
   gMustDraw = TRUE;
 
   b = NULL;
@@ -1682,7 +1667,6 @@ void Confirm( char *s, char *buttonText )
   SetColor( BLACK);
   SetBgColor( GRAY);
   ShowText( 300 - strlen( s)*4, 140, s, BLACK, -1);
-  FadeIn( gPalette);
   showmouse( NOFORCE);
 
   UserDialog( b);
@@ -1700,8 +1684,7 @@ void MagusFace( int pic, char *s, char *buttonText )
   ButtonPtr b;
 
   hidemouse();
-  FadeOut();
-  ClrScr();
+  GFXClear(&gGFX);
   gMustDraw = TRUE;
 
   b = NULL;
@@ -1714,7 +1697,6 @@ void MagusFace( int pic, char *s, char *buttonText )
   SetColor( BLACK);
   ShowText( 220, 160, s, BLACK, -1);
 
-  FadeIn( gPalette);
   showmouse( NOFORCE);
 
   UserDialog( b);
@@ -1734,8 +1716,7 @@ void ModifyCharacter( Person *p )
   int points;
 
   hidemouse();
-  FadeOut();
-  ClrScr();
+  GFXClear(&gGFX);
   
   DrawStoneBox( 200, 50, 200, 315);
   PutPic( 250, 75, gSprites[ p->icon], 0x03030303);
@@ -1770,7 +1751,6 @@ void ModifyCharacter( Person *p )
   ShowText( 210, 270, uString, BLACK, GRAY);
   sprintf( uString, "%2d points left", points);
   ShowText( 210, 300, uString, BLACK, GRAY);
-  FadeIn( gPalette);
 
   showmouse( NOFORCE);
 
@@ -1906,16 +1886,14 @@ void DrawClass( int class, int female )
     PutPic( 200, 125, gSprites[ gClassData[ class].femaleIcon], 0x3030303);
   else
     PutPic( 200, 125, gSprites[ gClassData[ class].maleIcon], 0x3030303);
-  SetColor( GRAY);
-  FillRect( 250, 140, 410, 150);
+  GFXRect(&gGFX, 250, 140, 410, 150, GRAY, true);
   ShowText( 250, 140, gClassData[ class].name, BLACK, -1);
 }
 
 void DrawSelectionScreen( int class, int female, char *name, ButtonPtr b )
 {
   hidemouse();
-  FadeOut();
-  ClrScr();
+  GFXClear(&gGFX);
 
   DrawStoneBox( 150, 100, 325, 120);
   DrawButtons( b);
@@ -1924,7 +1902,6 @@ void DrawSelectionScreen( int class, int female, char *name, ButtonPtr b )
   SetBgColor( GRAY);
   TextEditFrame( 250, 120, CHARACTER_MAXNAME);
   TextEdit( 250, 120, CHARACTER_MAXNAME, 0, name);
-  FadeIn( gPalette);
   showmouse( NOFORCE);
 }
 
@@ -1951,6 +1928,7 @@ void SelectCharacters( void )
   DrawSelectionScreen( class, female, name, b);
   DrawOneButton( b, 3, FALSE);
   DrawOneButton( b, 4, FALSE);
+  GFXFlip(&gGFX);
 
   while (TRUE) /* Vi return:ar inifr†n loopen... */
   {
@@ -2111,7 +2089,7 @@ void Inventory( Person *p )
       i = i->next;
     }
     else
-      FillRect( x, y, x + ICONWIDTH, y + ICONHEIGHT);
+		GFXRect(&gGFX, x, y, x + ICONWIDTH, y + ICONHEIGHT, GRAY, true);
     count++;
   }
 
@@ -2128,7 +2106,7 @@ void Inventory( Person *p )
       i = i->next;
     }
     else
-      FillRect( x, y, x + ICONWIDTH, y + ICONHEIGHT);
+		GFXRect(&gGFX, x, y, x + ICONWIDTH, y + ICONHEIGHT, GRAY, true);
     count++;
   }
 
@@ -2146,7 +2124,7 @@ void Inventory( Person *p )
       i = i->next;
     }
     else
-      FillRect( x, y, x + ICONWIDTH, y + ICONHEIGHT);
+		GFXRect(&gGFX, x, y, x + ICONWIDTH, y + ICONHEIGHT, GRAY, true);
     count++;
   }
   showmouse( NOFORCE);
@@ -2239,8 +2217,7 @@ struct item *GetFromInventory( Person *p, int *state )
     }
 
     i = GetClickedItem( p, x, y, state);
-    SetColor( GRAY);
-    FillRect( 210, 150, 440, 190);
+	GFXRect(&gGFX, 210, 150, 440, 190, GRAY, true);
     if (i)
     {
       PutPic( 300, 150, gSprites[ gObjectData[ i->id].icon], 0x03030303);
@@ -2277,8 +2254,7 @@ void Status( Person *p )
 {
   hidemouse();
   PutPic( 10, 57, gSprites[ p->icon], 0x03030303);
-  SetColor( GRAY);
-  FillRect( 10, 46, 10 + CHARACTER_MAXNAME*8, 55);
+  GFXRect(&gGFX, 10, 46, 10 + CHARACTER_MAXNAME * 8, 55, GRAY, true);
   ShowText( 10, 46, p->name, BLACK, -1);
 
   sprintf( uString, "%-15s", gLevelNames[ p->level]);
@@ -2308,8 +2284,7 @@ void Bars( Person *p )
 {
   int x;
 
-  SetColor( LIGHTGRAY);
-  Rectangle( 56, 59, 82, 66);
+  GFXRect(&gGFX, 56, 59, 82, 66, LIGHTGRAY, false);
   SetColor( DARKGRAY);
   Line( 56, 59, 82, 59);
   Line( 56, 59, 56, 66);
@@ -2320,17 +2295,15 @@ void Bars( Person *p )
     x = (25*p->power)/p->maxPower;
   SetColor( BLUE);
   if (x > 0)
-    FillRect( 57, 60, 56 + x, 65);
+	  GFXRect(&gGFX, 57, 60, 56 + x, 65, BLUE, true);
   if (x < 25)
   {
-    SetColor( GRAY);
-    FillRect( 57 + x, 60, 81, 65);
+	  GFXRect(&gGFX, 57 + x, 60, 81, 65, GRAY, true);
   }
   sprintf( uString, "%3d/%3d", max( 0, p->power), p->maxPower);
   ShowText( 90, 58, uString, BLACK, GRAY);
 
-  SetColor( LIGHTGRAY);
-  Rectangle( 56, 69, 82, 76);
+  GFXRect(&gGFX, 56, 69, 82, 76, LIGHTGRAY, false);
   SetColor( DARKGRAY);
   Line( 56, 69, 82, 69);
   Line( 56, 69, 56, 76);
@@ -2341,11 +2314,10 @@ void Bars( Person *p )
     x = (25*p->health)/p->maxHealth;
   SetColor( GREEN);
   if (x > 0)
-    FillRect( 57, 70, 56 + x, 75);
+	  GFXRect(&gGFX, 57, 70, 56 + x, 75, GREEN, true);
   if (x < 25)
   {
-    SetColor( GRAY);
-    FillRect( 57 + x, 70, 81, 75);
+	  GFXRect(&gGFX, 57 + x, 70, 81, 75, GRAY, true);
   }
   sprintf( uString, "%3d/%3d", p->health, p->maxHealth);
   ShowText( 90, 68, uString, BLACK, GRAY);
@@ -2373,17 +2345,14 @@ static void RatingLine( int x, int y, int color, int value, int max )
   if (value > max)
     value = max;
 
-  SetColor( BLACK);
-  Rectangle( x, y, x + max + 1, y + 3);
+  GFXRect(&gGFX, x, y, x + max + 1, y + 3, BLACK, false);
   if (value > 0)
   {
-    SetColor( color);
-    FillRect( x + 1, y + 1, x + value, y + 2);
+	  GFXRect(&gGFX, x + 1, y + 1, x + value, y + 2, color, true);
   }
   if (value < max)
   {
-    SetColor( GRAY);
-    FillRect( x + value + 1, y + 1, x + max, y + 2);
+	  GFXRect(&gGFX, x + value + 1, y + 1, x + max, y + 2, GRAY, true);
   }
 }
 
@@ -2449,7 +2418,7 @@ static void OverviewPanel( int forceDraw )
     if (forceDraw || info->person)
     {
       info->person = NULL;
-      FillRect( x, y, x + 29, y + 34);
+	  GFXRect(&gGFX, x, y, x + 29, y + 34, GRAY, true);
     }
     x += 30;
     if (x + 30 > OVERVIEW_RIGHT)
@@ -2542,15 +2511,13 @@ void PickUp( Person *p )
       PutPic( 250, 125, gSprites[ gObjectData[ i->id].icon], 0x03030303);
     else
     {
-      SetColor( GRAY);
-      FillRect( 250, 125, 250 + ICONWIDTH, 125 + ICONHEIGHT);
+		GFXRect(&gGFX, 250, 125, 250 + ICONWIDTH, 125 + ICONHEIGHT, GRAY, true);
       DrawOneButton( b, 0, FALSE);
       DrawOneButton( b, 1, FALSE);
       DrawOneButton( b, 3, FALSE);
     }
 
-    SetColor( GRAY);
-    FillRect( 225, 152, 425, 162);
+	GFXRect(&gGFX, 225, 152, 425, 162, GRAY, true);
     SetBgColor( GRAY);
     if (i)
     {
@@ -2597,8 +2564,7 @@ void PickUp( Person *p )
       FrameButton( b, 2, FALSE);
       DisposeButtons( &b);
       hidemouse();
-      SetColor( 0);
-      FillRect( 200, 100, 350, 250);
+	  GFXRect(&gGFX, 200, 100, 350, 250, 0, true);
       BufferDraw();
       showmouse( NOFORCE);
       return;
@@ -2628,8 +2594,7 @@ void Funeral( Person *p )
 {
   char s[100];
 
-  SetColor( BLACK);
-  FillRect( BOARDLEFT, 0, 639, 399);
+  GFXRect(&gGFX, BOARDLEFT, 0, 639, 399, BLACK, true);
   PutPic( 200, 80, gSprites[ 130], 0x03030303);
   SetColor( RED);
   SetBgColor( BLACK);
@@ -3868,8 +3833,7 @@ void Wishing( Person *p )
       Message( "Unknown item");
     }
   }
-  SetColor( BLACK);
-  FillRect( 200, 100, 425, 220);
+  GFXRect(&gGFX, 200, 100, 425, 220, BLACK, true);
   BufferDraw();
 }
 
@@ -5435,7 +5399,6 @@ void Events( void )
   StatusPanel();
   DrawButtons( b);
   Screen( gCharacters);
-  FadeIn( gPalette);
   done = 0;
   pc = gCharacters;
   while (!done)
@@ -5539,13 +5502,11 @@ void Events( void )
       done = Question( "Abort current game?");
       if (!done)
       {
-        FadeOut();
         gMustDraw = TRUE;
         DrawPlayArea();
         StatusPanel();
         DrawButtons( b);
         Screen( pc);
-        FadeIn( gPalette);
       }
       else if (Question( "Save game?"))
         SaveGame();
@@ -5635,7 +5596,7 @@ void CenterText( int y, char *s, int c )
 
 void Titles( void )
 {
-  ClrScr();
+  GFXClear(&gGFX);
   PutPic( 290, 140, gSprites[ 131], 0x03030303);
 
   CenterText( 280, "MAGUS", WHITE);
@@ -5653,6 +5614,7 @@ void Titles( void )
 void PressAnyKey( void )
 {
   CenterText( 460, "Press any key", LIGHTGRAY);
+  GFXFlip(&gGFX);
   getch();
 }
 
@@ -5690,14 +5652,12 @@ void SpreadItems( void )
   struct item *i;
   int x, y, count;
 
-  FadeOut();
   hidemouse();
-  ClrScr();
+  GFXClear(&gGFX);
   DrawStoneBox( 78, 53, 154, 60);
   SetColor( BLACK);
   SetBgColor( GRAY);
   ShowText( 120, 75, "Thinking...", BLACK, -1);
-  FadeIn( gPalette);
 
   for (count = 0; count < 5000; count++)
   {
@@ -5790,9 +5750,8 @@ void TheHallOfFame( void )
   int i;
   struct HallEntry *h;
   
-  FadeOut();
   hidemouse();
-  ClrScr();
+  GFXClear(&gGFX);
 
   b = NULL;
   DrawStoneBox( 100, 0, 400, 480);
@@ -5820,7 +5779,6 @@ void TheHallOfFame( void )
     }
   }
 
-  FadeIn( gPalette);
   showmouse( NOFORCE);
 
   UserDialog( b);
@@ -5844,14 +5802,12 @@ void Initialize( void )
   SetFont( FONT_8X8);
 
   hidemouse();
-  GetPalette( gOldPalette);
   gWorld = (WorldColumn *) malloc( (unsigned long)WORLD_X_MAX * (unsigned long)sizeof( WorldColumn));
   memset( gSprites, 0, sizeof( gSprites));
   memset( gBuffer, 0, sizeof( Board));
   memset( gPreviousBuffer, 0, sizeof( Board));
   gCharacters = NULL;
   gThings = NULL;
-  ClrScr();
   SetMouseShape( myMouse);
   srand( (unsigned int) time( NULL));
   gFollowDarkMoves = FALSE;
@@ -5863,7 +5819,6 @@ void CleanUp( void )
 {
   ErasePics( gSprites, MAXSPRITE);
   SetMouseArrow();
-  // SetPalette( gOldPalette);
   free( gWorld);
 }
 
@@ -5876,7 +5831,6 @@ void CleanUp( void )
 
 int main( int argc, char *argv[] )
 {
-	GFXInit(&gGFX);
 	EventInit(&gEventHandlers, false);
 
   if (argc <= 1)
@@ -5886,14 +5840,17 @@ int main( int argc, char *argv[] )
       printf( "Sound initialization failed!\n");
       getch();
     }
-    PlaySong( NULL); // to setup channels...
     printf( "Sound initialization completed\n");
   }
 
   Initialize();
   hidemouse();
-  ReadPics( "MAGUS.ART", gSprites, MAXSPRITE, gPalette);
-  SetPalette( gPalette);
+	uint8_t palette[32];
+	if (!ReadPics("MAGUS.ART", gSprites, MAXSPRITE, palette))
+	{
+		goto bail;
+	}
+	GFXInit(&gGFX, palette);
   Titles();
   ReadWorld();
   HallInit();
@@ -5908,8 +5865,7 @@ int main( int argc, char *argv[] )
       CreateHordes();
     }
 
-    FadeOut();
-    ClrScr();
+    GFXClear(&gGFX);
     gMustDraw = TRUE;
     Events();
     CleanUpTheWorld();
@@ -5920,6 +5876,8 @@ int main( int argc, char *argv[] )
   printf( "Exiting main loop...\n");
 
   HallSave();
+
+ bail:
   CleanUp();
 
   printf( "Shutting down sound...");

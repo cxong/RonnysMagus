@@ -26,10 +26,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "gfx.h"
 
 #include <stdio.h>
+#include <string.h>
 
 GFX gGFX;
 
-void GFXInit(GFX *g)
+static SDL_Surface *CreateScreen(SDL_Renderer *renderer, const uint8_t *pal);
+void GFXInit(GFX *g, const uint8_t *pal)
 {
 	// TODO: icon
 	int flags = SDL_WINDOW_RESIZABLE;
@@ -55,13 +57,10 @@ void GFXInit(GFX *g)
 			SDL_GetError());
 		return;
 	}
-	g->screen = SDL_CreateTexture(
-		g->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-		640, 480);
+	g->screen = CreateScreen(g->renderer, pal);
 	if (g->screen == NULL)
 	{
-		fprintf(stderr, "cannot create screen texture: %s\n",
-			SDL_GetError());
+		fprintf(stderr, "cannot create screen surface: %s\n", SDL_GetError());
 		return;
 	}
 	g->buf = malloc(640 * 480 * sizeof *g->buf);
@@ -69,9 +68,101 @@ void GFXInit(GFX *g)
 void GFXQuit(GFX *g)
 {
 	//SDL_FreeSurface(g->icon);
-	SDL_DestroyTexture(g->screen);
+	SDL_FreeSurface(g->screen);
 	SDL_DestroyRenderer(g->renderer);
 	SDL_DestroyWindow(g->window);
 	SDL_VideoQuit();
 	free(g->buf);
+}
+
+static int SurfaceSetPalette(SDL_Surface *s, const uint8_t *pal);
+static SDL_Surface *CreateScreen(SDL_Renderer *renderer, const uint8_t *pal)
+{
+	SDL_Surface *s = SDL_CreateRGBSurface(0, 640, 480, 8, 0, 0, 0, 0);
+	if (s == NULL)
+	{
+		fprintf(stderr, "cannot create surface: %s\n", SDL_GetError());
+		goto bail;
+	}
+	if (SurfaceSetPalette(s, pal) == -1)
+	{
+		fprintf(stderr, "cannot set palette: %s\n", SDL_GetError());
+		goto bail;
+	}
+
+bail:
+	return s;
+}
+static int SurfaceSetPalette(SDL_Surface *s, const uint8_t *pal)
+{
+	SDL_Color palette[16];
+	memset(palette, 0, sizeof palette);
+	for (int i = 0; i < 16; i++)
+	{
+		// RGB stored in two bytes :
+		// Lower byte is R
+		// Upper byte contains GB (4 bits each)
+		const uint8_t b1 = pal[i * 2];
+		const uint8_t b2 = pal[i * 2 + 1];
+		const int r = b1;
+		const int g = b2 >> 4;
+		const int b = b2 & 0x0f;
+		// Colours are actually 3-bits, giving a range of 0-7
+		// Max brightness is actually based on 6-bit depth (i.e. max 63); this
+		// was done by multiplying by 8
+		// Now we convert to 0-255 range, which is an additional multiply by 4
+		// Therefore we multiply by 32
+		const int gamma = 32;
+		palette[i].r = r * gamma;
+		palette[i].g = g * gamma;
+		palette[i].b = b * gamma;
+		palette[i].a = 255;
+	}
+	return SDL_SetPaletteColors(s->format->palette, palette, 0, 16);
+}
+
+void GFXClear(GFX *g)
+{
+	memset(g->buf, 0, 640 * 480 * sizeof *g->buf);
+}
+
+void GFXRect(
+	GFX *g, const int x1, const int y1, const int x2, const int y2,
+	const int color, const bool fill)
+{
+	for (int x = x1; x <= x2; x++)
+	{
+		for (int y = y1; y <= y2; y++)
+		{
+			if (fill || x == x1 || x == x2 || y == y1 || y == y2)
+			{
+				g->buf[x + y * 640] = color;
+			}
+		}
+	}
+}
+
+void GFXFlip(GFX *g)
+{
+	if (SDL_LockSurface(g->screen) == -1)
+	{
+		fprintf(stderr, "cannot lock screen: %s\n", SDL_GetError());
+		return;
+	}
+	memcpy(g->screen->pixels, g->buf, 640 * 480 * sizeof *g->buf);
+	SDL_UnlockSurface(g->screen);
+	SDL_Texture *t = SDL_CreateTextureFromSurface(g->renderer, g->screen);
+	if (g->screen == NULL)
+	{
+		fprintf(stderr, "cannot create screen texture: %s\n",
+			SDL_GetError());
+		return;
+	}
+	if (SDL_RenderCopy(g->renderer, t, NULL, NULL) == -1)
+	{
+		fprintf(stderr, "cannot render texture: %s\n", SDL_GetError());
+		return;
+	}
+	SDL_DestroyTexture(t);
+	SDL_RenderPresent(g->renderer);
 }

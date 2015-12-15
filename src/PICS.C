@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -55,38 +56,45 @@ void RearrangePic( word *pic, int size )
   free( copy);
 }
 
-void ReadPics( const char *name, word **pics, int maxPics, word *p )
+bool ReadPics( const char *name, word **pics, int maxPics, word *p )
 {
 	FILE *f = fopen(name, "rb");
-	if (f != NULL)
+	if (f == NULL)
 	{
-		if (p)
-			if (fread(p, 32, 1, f) != 1) goto bail;
-		else
-			fseek(f, 32, SEEK_SET);
-		int index = 0;
-		size_t bytesRead;
-		do
-		{
-			word size;
-			bytesRead = fread(&size, sizeof size, 1, f);
-			if (bytesRead != 0 && size != 0)
-			{
-				pics[index] = malloc(size + 2);
-				if (fread(pics[index], 4, 1, f) != 1) goto bail;
-				if (fread(pics[index] + 3, size - 4, 1, f) != 1) goto bail;
-				pics[index][0]++;
-				pics[index][1]++;
-			}
-			else
-				pics[index] = NULL;
-			index++;
-		}
-		while (index < maxPics && bytesRead != 0);
-
-	bail:
-		fclose(f);
+		fprintf(stderr, "Failed to read pics file %s\n", name);
+		return false;
 	}
+	if (p)
+	{
+		if (fread(p, 32, 1, f) != 1) goto bail;
+	}
+	else
+	{
+		fseek(f, 32, SEEK_SET);
+	}
+	int index = 0;
+	size_t bytesRead;
+	do
+	{
+		word size;
+		bytesRead = fread(&size, sizeof size, 1, f);
+		if (bytesRead != 0 && size != 0)
+		{
+			pics[index] = malloc(size + 2);
+			if (fread(pics[index], 4, 1, f) != 1) goto bail;
+			if (fread(pics[index] + 3, size - 4, 1, f) != 1) goto bail;
+			pics[index][0]++;
+			pics[index][1]++;
+		}
+		else
+			pics[index] = NULL;
+		index++;
+	}
+	while (index < maxPics && bytesRead != 0);
+
+bail:
+	fclose(f);
+	return true;
 }
 
 void ErasePics( word **pics, int maxPics )

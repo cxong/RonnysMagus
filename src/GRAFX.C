@@ -41,12 +41,6 @@ void Pause( int ticks )
   /*delay( ticks);*/
 }
 
-void ClrScr( void )
-{
-//  _clearscreen( _GCLEARSCREEN);
-////  clearviewport();
-}
-
 void SetFont( int fontIndex )
 {
   /*if (fontIndex) fontIndex = 0;*/
@@ -136,33 +130,11 @@ void Line( int x1, int y1, int x2, int y2 )
   _lineto( x2, y2);*/
 }
 
-void Rectangle( int x1, int y1, int x2, int y2 )
-{
-  /*_rectangle( _GBORDER, x1, y1, x2, y2);*/
-}
-
-void FillRect( int x1, int y1, int x2, int y2 )
-{
-  /*_rectangle( _GFILLINTERIOR, x1, y1, x2, y2);*/
-}
-
 
 void OutTextXY( int x, int y, char *s )
 {
   /*_moveto( x, y);
   _outgtext( s);*/
-}
-
-Palette uPalette =
-{ 0x000, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF,
-  0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF, 0xFFF };
-
-void GetPalette( word *p )
-{
-  int count;
-
-  for (count = 0; count < 16; count++)
-    p[ count] = uPalette[ count];
 }
 
 word Swap( word w )
@@ -173,32 +145,6 @@ word Swap( word w )
 word Reverse( word i )
 {
   return ((i & 8) >> 3) + ((i & 4) >> 1) + ((i & 2) << 1) + ((i & 1) << 3);
-}
-
-void SetPalette( word *p )
-{
-  int i;
-  long r, g, b;
-  word x;
-
-  for (i = 0; i < 16; i++)
-  {
-    uPalette[i] = p[i];
-    x = Swap( p[i]);
-    b = (x & 7) << 3;
-    g = ((x >> 4) & 7) << 3;
-    r = ((x >> 8) & 7) << 3;
-    /*_remappalette( Reverse( i), (b << 16) + (g << 8) + r);*/
-  }
-}
-
-void FadeOut( void )
-{
-}
-
-void FadeIn( word *p )
-{
-  SetPalette( p);
 }
 
 int Kbshift( int x )

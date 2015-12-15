@@ -12,7 +12,6 @@
 #define TEXT_OVERWRITE		7
 
 typedef unsigned short word;
-typedef word Palette[16];
 
 #define FONT_6X6	0
 #define FONT_8X8	1
@@ -31,7 +30,6 @@ void SetMouseShape( word *shape );
 void SetMouseArrow( void );
 void Pause( int ticks );
 
-void ClrScr( void );
 void SetFont( int fontIndex );
 int  GetFont( void );
 void SetColor( word c );
@@ -48,14 +46,7 @@ void SetTextMode( word c );
 word GetTextMode( void );
 
 void Line( int x1, int y1, int x2, int y2 );
-void Rectangle( int x1, int y1, int x2, int y2 );
-void FillRect( int x1, int y1, int x2, int y2 );
 void OutTextXY( int x, int y, char *s );
-
-void GetPalette( word *p );
-void SetPalette( word *p );
-void FadeOut( void );
-void FadeIn( word *p );
 
 int  Kbshift( int x );
 int  ReadKey( void );
