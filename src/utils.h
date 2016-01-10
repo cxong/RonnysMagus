@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015, Cong Xu
+Copyright (c) 2015-2016, Cong Xu
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,36 +25,33 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <assert.h>
 #include <stdbool.h>
 
-#include <SDL.h>
+#ifdef _MSC_VER
+#define CHALT() __debugbreak()
+#else
+#define CHALT()
+#endif
 
-#include "pic.h"
+#ifdef _MSC_VER
+#define __func__ __FUNCTION__
+#endif
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
-#define SCREEN_CENTER_X(w) ((SCREEN_WIDTH - (w)) / 2)
+#define CASSERT(_x, _errmsg)\
+{\
+	volatile bool isOk = _x;\
+	if (!isOk)\
+	{\
+		static char _buf[1024];\
+		sprintf(\
+			_buf,\
+			"In %s %d:%s: " _errmsg " (" #_x ")",\
+			__FILE__, __LINE__, __func__);\
+		CHALT();\
+		assert(_x);\
+	}\
+}
 
-typedef struct
-{
-	SDL_Surface *icon;
-	SDL_Surface *screen;
-	SDL_Renderer *renderer;
-	SDL_Window *window;
-	Uint8 *buf;
-} GFX;
-
-extern GFX gGFX;
-
-void GFXInit(GFX *g, const uint8_t *pal);
-void GFXQuit(GFX *g);
-
-void GFXClear(GFX *g);
-void GFXRect(
-	GFX *g, const int x1, const int y1, const int x2, const int y2,
-	const int color, const bool fill);
-// Draw a picture but only using it as a mask
-// i.e. copy pixel only if that pixel in the pic has alpha
-void GFXBlitMaskedPic(
-	GFX *g, const Vec2i pos, const Pic *pic, const Uint8 color);
-void GFXFlip(GFX *g);
+#define MAX(x, y) ((x) > (y) ? (x) : (y))
+#define MIN(x, y) ((x) < (y) ? (x) : (y))

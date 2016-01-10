@@ -9,6 +9,8 @@ Datum   Žndring
 960812  Konverterad till Watcom C
 ---------------------------------------------------------------------
 */
+#include "magus.h"
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -20,6 +22,7 @@ Datum   Žndring
 #include <dos.h>
 
 #include "defs.h"
+#include "font_utils.h"
 #include "gfx.h"
 #include "grafx.h"
 #include "events.h"
@@ -63,32 +66,6 @@ unsigned short myMouse[37] =
   0, 14336, 15872, 3968, 960, 448, 1596, 1788,
   1524, 2508, 3642, 3966, 126, 220, 56, 0
 };
-
-
-// +--------------+
-// |   Paletten   |
-// +--------------+
-
-
-/* F„rgerna i Magus palett */
-
-
-#define BLACK       0
-#define WHITE      15
-#define BROWN       8
-#define ORANGE      4
-#define YELLOW      2
-#define LIGHTGRAY   6
-#define BLUE       12
-#define GRAY       10
-#define GREEN      14
-#define DARKGREEN   1
-#define DARKBROWN   9
-#define RED         5
-#define BEIGE       3
-#define DARKBLUE    7
-#define DARKRED    13
-#define DARKGRAY   11
 
 
 /*
@@ -5799,7 +5776,7 @@ void TheHallOfFame( void )
 
 void Initialize( void )
 {
-  SetFont( FONT_8X8);
+	FontLoadFromJSON(&gFont, "font.png", "font.json");
 
   hidemouse();
   gWorld = (WorldColumn *) malloc( (unsigned long)WORLD_X_MAX * (unsigned long)sizeof( WorldColumn));
@@ -5817,6 +5794,7 @@ void Initialize( void )
 
 void CleanUp( void )
 {
+	FontTerminate(&gFont);
   ErasePics( gSprites, MAXSPRITE);
   SetMouseArrow();
   free( gWorld);

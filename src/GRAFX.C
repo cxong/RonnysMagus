@@ -41,11 +41,6 @@ void Pause( int ticks )
   /*delay( ticks);*/
 }
 
-void SetFont( int fontIndex )
-{
-  /*if (fontIndex) fontIndex = 0;*/
-}
-
 int GetFont( void )
 {
   return 0;

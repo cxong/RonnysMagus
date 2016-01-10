@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2015, Cong Xu
+Copyright (c) 2015-2016, Cong Xu
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,9 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <string.h>
 
+#include "utils.h"
+
+
 GFX gGFX;
 
 static SDL_Surface *CreateScreen(SDL_Renderer *renderer, const uint8_t *pal);
@@ -36,7 +39,8 @@ void GFXInit(GFX *g, const uint8_t *pal)
 	// TODO: icon
 	int flags = SDL_WINDOW_RESIZABLE;
 	// TODO: fullscreen option?
-	SDL_CreateWindowAndRenderer(640, 480, flags, &g->window, &g->renderer);
+	SDL_CreateWindowAndRenderer(
+		SCREEN_WIDTH, SCREEN_HEIGHT, flags, &g->window, &g->renderer);
 	if (g->window == NULL || g->renderer == NULL)
 	{
 		fprintf(stderr, "cannot create window or renderer: %s\n",
@@ -51,7 +55,7 @@ void GFXInit(GFX *g, const uint8_t *pal)
 			SDL_GetError());
 	}
 
-	if (SDL_RenderSetLogicalSize(g->renderer, 640, 480) != 0)
+	if (SDL_RenderSetLogicalSize(g->renderer, SCREEN_WIDTH, SCREEN_HEIGHT) != 0)
 	{
 		fprintf(stderr, "cannot set renderer logical size: %s\n",
 			SDL_GetError());
@@ -63,7 +67,7 @@ void GFXInit(GFX *g, const uint8_t *pal)
 		fprintf(stderr, "cannot create screen surface: %s\n", SDL_GetError());
 		return;
 	}
-	g->buf = malloc(640 * 480 * sizeof *g->buf);
+	g->buf = malloc(SCREEN_WIDTH * SCREEN_HEIGHT * sizeof *g->buf);
 }
 void GFXQuit(GFX *g)
 {
@@ -78,7 +82,8 @@ void GFXQuit(GFX *g)
 static int SurfaceSetPalette(SDL_Surface *s, const uint8_t *pal);
 static SDL_Surface *CreateScreen(SDL_Renderer *renderer, const uint8_t *pal)
 {
-	SDL_Surface *s = SDL_CreateRGBSurface(0, 640, 480, 8, 0, 0, 0, 0);
+	SDL_Surface *s =
+		SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 8, 0, 0, 0, 0);
 	if (s == NULL)
 	{
 		fprintf(stderr, "cannot create surface: %s\n", SDL_GetError());
@@ -123,7 +128,7 @@ static int SurfaceSetPalette(SDL_Surface *s, const uint8_t *pal)
 
 void GFXClear(GFX *g)
 {
-	memset(g->buf, 0, 640 * 480 * sizeof *g->buf);
+	memset(g->buf, 0, SCREEN_WIDTH * SCREEN_HEIGHT * sizeof *g->buf);
 }
 
 void GFXRect(
@@ -136,7 +141,27 @@ void GFXRect(
 		{
 			if (fill || x == x1 || x == x2 || y == y1 || y == y2)
 			{
-				g->buf[x + y * 640] = color;
+				g->buf[x + y * SCREEN_WIDTH] = color;
+			}
+		}
+	}
+}
+
+void GFXBlitMaskedPic(
+	GFX *g, const Vec2i pos, const Pic *pic, const Uint8 color)
+{
+	// Clamp start and end x/y to prevent blitting off screen
+	for (int y = MAX(0, -pos.y);
+		y < MIN(pic->size.y, SCREEN_HEIGHT - pos.y);
+		y++)
+	{
+		for (int x = MAX(0, -pos.x);
+			x < MIN(pic->size.x, SCREEN_WIDTH - pos.x);
+			x++)
+		{
+			if (pic->Data[x + y * pic->size.x])
+			{
+				g->buf[x + pos.x + (y + pos.y) * SCREEN_WIDTH] = color;
 			}
 		}
 	}
@@ -149,7 +174,9 @@ void GFXFlip(GFX *g)
 		fprintf(stderr, "cannot lock screen: %s\n", SDL_GetError());
 		return;
 	}
-	memcpy(g->screen->pixels, g->buf, 640 * 480 * sizeof *g->buf);
+	memcpy(
+		g->screen->pixels, g->buf,
+		SCREEN_WIDTH * SCREEN_HEIGHT * sizeof *g->buf);
 	SDL_UnlockSurface(g->screen);
 	SDL_Texture *t = SDL_CreateTextureFromSurface(g->renderer, g->screen);
 	if (g->screen == NULL)

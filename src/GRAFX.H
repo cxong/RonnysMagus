@@ -13,10 +13,6 @@
 
 typedef unsigned short word;
 
-#define FONT_6X6	0
-#define FONT_8X8	1
-#define FONT_8X16	2
-
 #define FontHeight(x)	textheight( "Mg")
 #define FontWidth(x)	textwidth( "M");
 
@@ -30,7 +26,6 @@ void SetMouseShape( word *shape );
 void SetMouseArrow( void );
 void Pause( int ticks );
 
-void SetFont( int fontIndex );
 int  GetFont( void );
 void SetColor( word c );
 word GetColor( void );
